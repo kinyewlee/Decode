@@ -4,14 +4,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Gamepad;
-
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "Gamepad", group = "Robot")
 public class GamepadOpMode extends LinearOpMode {
-    DcMotor leftFront, leftRear, rightFront, rightRear;
+    DcMotor leftFront, leftRear, rightFront, rightRear, intake;
+    DcMotorEx shooter;
+    Servo gateServoLeft, gateServoRight;
     Boolean a_pressed, b_pressed, x_pressed, lb_pressed, rb_pressed;
 
     @Override
@@ -23,10 +23,26 @@ public class GamepadOpMode extends LinearOpMode {
         rightFront = hardwareMap.get(DcMotor.class, "right_front");
         rightRear = hardwareMap.get(DcMotor.class, "right_rear");
 
+        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         // We set the left motors in reverse which is needed for drive trains where the left
         // motors are opposite to the right ones.
         leftRear.setDirection(DcMotor.Direction.REVERSE);
         leftFront.setDirection(DcMotor.Direction.REVERSE);
+
+        intake = hardwareMap.dcMotor.get("intake");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        gateServoLeft = hardwareMap.servo.get("servoLeft");
+        gateServoRight = hardwareMap.servo.get("servoRight");
 
         //region telemetry setup
         telemetry.addData(">", "Press Play to start op mode");
@@ -42,7 +58,12 @@ public class GamepadOpMode extends LinearOpMode {
             if (gamepad1.a || gamepad2.a) {
                 if (!a_pressed) {
                     a_pressed = true;
-                    // code to run once when a press
+                    if (shooter.getVelocity() > 1900d) {
+                        // Toggle servo
+                        double servoPosition = gateServoRight.getPosition() == 0d ? 1d : 0d;
+                        gateServoLeft.setPosition(1d - servoPosition);
+                        gateServoRight.setPosition(servoPosition);
+                    }
                 }
             } else { // Reset the 'X' button press flag
                 a_pressed = false;
@@ -75,7 +96,12 @@ public class GamepadOpMode extends LinearOpMode {
             if (gamepad1.left_bumper || gamepad2.left_bumper) {
                 if (!lb_pressed) {
                     lb_pressed = true;
-                    // code to run once when left bumper press
+                    if (shooter.getVelocity() == 0d) {
+                        double intakePower = intake.getPower() > 0d ? 0d : 0.9d;
+                        intake.setPower(intakePower);
+                        gateServoLeft.setPosition(0d);
+                        gateServoRight.setPosition(1d);
+                    }
                 }
             } else {
                 lb_pressed = false;
@@ -90,6 +116,17 @@ public class GamepadOpMode extends LinearOpMode {
                 }
             } else {
                 rb_pressed = false;
+            }
+            //endregion
+
+            //region left_trigger
+            if (gamepad1.left_trigger > 0d || gamepad2.left_trigger > 0d) {
+                double shooterVelocity = Math.max(gamepad1.left_trigger, gamepad2.left_trigger) * 2200d;
+                shooter.setVelocity(shooterVelocity);
+                intake.setPower(0d);
+            }
+            else {
+                shooter.setPower(0d);
             }
             //endregion
 
@@ -126,6 +163,7 @@ public class GamepadOpMode extends LinearOpMode {
 
             // Send calculated power to wheels
             drive(drive, turn, side);
+            //endregion
         }
     }
 
@@ -163,6 +201,9 @@ public class GamepadOpMode extends LinearOpMode {
                 .addData("lr", "%.1f", frontRightPower)
                 .addData("rf", "%.1f", frontRightPower)
                 .addData("rr", "%.1f", backRightPower);
+        telemetry.addData("shooter", "%f", shooter.getVelocity());
+        telemetry.addData("intake", "%.1f", intake.getPower());
+        telemetry.addData("gate", "%.1f", gateServoRight.getPosition());
         telemetry.update();
     }
 }
