@@ -34,11 +34,12 @@ public class GamepadOpMode extends LinearOpMode {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
 
         intake = hardwareMap.dcMotor.get("intake");
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        intake.setDirection(DcMotor.Direction.REVERSE);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooter.setDirection(DcMotor.Direction.REVERSE);
+        // https://javadoc.io/doc/org.firstinspires.ftc/RobotCore/latest/com/qualcomm/robotcore/hardware/DcMotor.RunMode.html
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         gateServoLeft = hardwareMap.servo.get("servoLeft");
@@ -58,6 +59,7 @@ public class GamepadOpMode extends LinearOpMode {
             if (gamepad1.a || gamepad2.a) {
                 if (!a_pressed) {
                     a_pressed = true;
+
                     if (shooter.getVelocity() > 1900d) {
                         // Toggle servo
                         double servoPosition = gateServoRight.getPosition() == 0d ? 1d : 0d;
