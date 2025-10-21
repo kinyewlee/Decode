@@ -72,6 +72,12 @@ public class ConceptTelemetry extends LinearOpMode  {
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        telemetry.addLine("motor | ")
+                .addData("lf", "%d", () -> leftFront.getCurrentPosition())
+                .addData("lr", "%d", () -> leftRear.getCurrentPosition())
+                .addData("rf", "%d", () -> rightFront.getCurrentPosition())
+                .addData("rr", "%d", () -> rightRear.getCurrentPosition());
+
         /*
          * Wait until we've been given the ok to go. For something to do, we emit the
          * elapsed time as we sit here and wait. If we didn't want to do anything while
@@ -83,17 +89,10 @@ public class ConceptTelemetry extends LinearOpMode  {
         }
 
         while (opModeIsActive()) {
-
             /*
              * Transmit the telemetry to the driver station, subject to throttling.
              * See the documentation for Telemetry.getMsTransmissionInterval() for more information.
              */
-            telemetry.clearAll();
-            telemetry.addLine("motor | ")
-                    .addData("lf", "%d", leftFront.getCurrentPosition())
-                    .addData("lr", "%d", leftRear.getCurrentPosition())
-                    .addData("rf", "%d", rightFront.getCurrentPosition())
-                    .addData("rr", "%d", rightRear.getCurrentPosition());
             telemetry.update();
         }
     }
